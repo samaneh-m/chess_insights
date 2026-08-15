@@ -20,6 +20,29 @@ class Settings(BaseSettings):
     port: int = 8000
     log_level: str = "INFO"
 
+    postgres_db: str = "chess_insights"
+    postgres_user: str = "chess"
+    postgres_password: str = "chess"
+    postgres_host: str = "localhost"
+    postgres_port: int = 5432
+    database_url: str = ""
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        """The effective database URL.
+
+        Uses ``DATABASE_URL`` when set (e.g. Docker Compose overrides it to
+        point at the ``db`` service); otherwise assembles it from the
+        individual ``POSTGRES_*`` fields, which is convenient for local
+        host-based development.
+        """
+        if self.database_url:
+            return self.database_url
+        return (
+            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
+        )
+
 
 @lru_cache
 def get_settings() -> Settings:
