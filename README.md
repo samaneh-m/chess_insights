@@ -11,18 +11,16 @@ dashboard.
 
 ## Current Phase
 
-**Phase 5 — Chess.com Integration.** This phase adds a Chess.com API client
-and normalizer alongside Lichess's, both implementing the same
-`ChessPlatformClient` contract and producing the same `NormalizedGame`
-schema. Phases 1-4's package/CLI/FastAPI/Docker/PostgreSQL/schema/Lichess
-foundation is unchanged.
+**Phase 6 — Synchronization & Persistence.** This phase connects the
+Lichess/Chess.com integrations to PostgreSQL: a repository layer plus a
+`GameSyncService` that fetches a player's games and stores the new ones,
+deduplicated, in one transaction. This is the first phase with real
+end-to-end functionality: `uv run -m chess_insights sync ...` actually
+imports and stores games.
 
-Fetched games are **not persisted** yet — no repositories or sync service.
-See [Current Status](#current-status) below.
-
-- Lichess integration: **implemented**
-- Chess.com integration: **implemented**
-- Persistence/sync of imported games: not implemented yet
+- Lichess import + persistence: **implemented**
+- Chess.com import + persistence: **implemented**
+- Deduplicated synchronization: **implemented**
 - Analytics: not implemented yet
 - Dashboard: not implemented yet
 
@@ -67,6 +65,38 @@ Once running, visit:
 
 - `GET /` — basic application info
 - `GET /health` — application + database health (see below)
+
+## Synchronizing Games
+
+```bash
+uv run -m chess_insights sync lichess USERNAME --max-games 100
+uv run -m chess_insights sync chess_com USERNAME --max-games 100
+```
+
+("`chess.com`" is also accepted as an alias for `chess_com`.) This
+requires a reachable, migrated PostgreSQL database (see
+[PostgreSQL / Docker Setup](#postgresql--docker-setup) and
+[Alembic](#alembic) below). `--max-games` defaults to 100; omit a game's
+platform limit entirely by calling `GameSyncService.sync_player(...,
+max_games=None)` directly (not currently exposed as a CLI flag).
+
+Each run: gets or creates the `Player` row (case-insensitive username), 
+fetches games from the platform, inserts only games not already stored 
+(deduplicated against the existing `(platform, external_game_id, player_id)`
+data), and updates `Player.last_sync_at` — all in one transaction, so a
+failure part-way through leaves nothing misleading behind. Example output:
+
+```text
+Platform: chess_com
+Player: hikaru
+Fetched games: 6
+Imported games: 3
+Skipped existing games: 3
+```
+
+Running the same command again is safe and idempotent — already-imported
+games are skipped, not duplicated or re-inserted. Exits non-zero on
+failure (unknown user, rate limited, network error, or a database error).
 
 ## PostgreSQL / Docker Setup
 
@@ -279,6 +309,35 @@ Errors are raised as `ChessComError` subclasses (`ChessComUserNotFoundError`,
 `ChessComRateLimitError`, `ChessComAPIError`, `ChessComConnectionError`,
 `ChessComDataError`), mirroring the Lichess exception hierarchy.
 
+## Repositories & Sync Service
+
+`chess_insights.repositories` holds persistence-only operations (no HTTP,
+no FastAPI) that take an `AsyncSession`:
+
+- **`PlayerRepository`** — `get_by_platform_username`, `get_or_create`
+  (case-insensitively canonicalized username), `mark_synced`.
+- **`GameRepository`** — `existing_external_ids` (one batch query, not one
+  per game), `exists`, `add_many` (maps `NormalizedGame` → `Game` via the
+  single `normalized_game_to_game` function, reused for every platform).
+
+Repositories never commit or roll back — `chess_insights.services.sync.
+GameSyncService` owns the transaction:
+
+```text
+username -> platform client.fetch_games() -> list[NormalizedGame]
+         -> get_or_create Player -> batch-check existing external ids
+         -> insert only new games -> update last_sync_at -> commit
+```
+
+The platform fetch happens *before* any database write, so a failed fetch
+(unknown user, rate limit, network error) never creates a `Player` row
+implying a successful sync. If persistence then fails for any reason, the
+session is rolled back and `last_sync_at` is left untouched; the failure
+is raised as `SyncError` (chaining the original exception). Client
+selection (`ChessPlatform.LICHESS`/`CHESS_COM` -> `LichessClient`/
+`ChessComClient`) is centralized in one small factory mapping, injectable
+for testing.
+
 ## Test
 
 ```bash
@@ -288,8 +347,10 @@ uv run pytest
 Runs fast unit tests only (database calls are mocked, Lichess/Chess.com
 HTTP calls use `httpx.MockTransport` with fixtures under
 `tests/fixtures/{lichess,chess_com}/` — no real network access). Tests
-that require a real PostgreSQL connection live in `tests/integration/` and
-are marked `integration`; they're excluded by default. To run them:
+that require a real PostgreSQL connection — including `PlayerRepository`/
+`GameRepository` and `GameSyncService` (with mocked platform clients but a
+real database) — live in `tests/integration/` and are marked `integration`;
+they're excluded by default. To run them:
 
 ```bash
 docker compose up -d db
@@ -314,7 +375,8 @@ src/chess_insights/
 ├── core/               # configuration and logging foundations
 ├── db/                 # SQLAlchemy engine/session, declarative base, health check
 ├── domain/             # enums shared across the app (ChessPlatform, GameResult, ...)
-├── services/           # (reserved) application/service layer
+├── repositories/        # Player/Game persistence (AsyncSession in, no HTTP)
+├── services/             # GameSyncService: wires integrations to repositories
 ├── integrations/       # platform clients + common client contract (base.py)
 │   ├── lichess/          # HTTP client, normalizer, exceptions
 │   └── chess_com/        # HTTP client, normalizer, exceptions
@@ -334,10 +396,9 @@ Importing `chess_insights.db.models` registers them on `Base.metadata` —
 this is the one place that import should happen from (e.g. Alembic's
 `env.py`), rather than relying on incidental import side effects.
 
-The `domain`, `services`, `integrations`, and `analytics` packages still only
-establish architectural boundaries for later phases. `db/` is infrastructure
-only — it contains no chess-specific tables. The intended dependency
-direction is:
+`analytics/` still only establishes an architectural boundary for a later
+phase. `db/` is infrastructure only — it contains no chess-specific
+business logic. The intended dependency direction is:
 
 ```text
 CLI -> Application (API) -> Services / Domain -> Integrations / Persistence
@@ -362,9 +423,12 @@ Implemented:
 - Chess.com API client + normalization (`chess_insights.integrations.chess_com`)
 - A shared `ChessPlatformClient` contract and `NormalizedGame` schema both
   platform clients produce equivalently
+- `PlayerRepository`/`GameRepository` (persistence, batch deduplication)
+- `GameSyncService` + `uv run -m chess_insights sync <platform> <username>`:
+  fetch, deduplicate, and persist a player's games from either platform in
+  one transaction
 
 Not implemented yet:
 
-- Persisting fetched games to the database (repositories / sync service)
 - Chess performance analytics and insights
 - Visualizations / HTML dashboard
