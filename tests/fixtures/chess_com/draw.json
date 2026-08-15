@@ -1,0 +1,12 @@
+{
+  "url": "https://www.chess.com/game/live/1000000005",
+  "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1/2-1/2\"]\n[ECO \"E60\"]\n[ECOUrl \"https://www.chess.com/openings/Kings-Indian-Defense\"]\n\n1. d4 {[%clk 0:29:58]} 1... Nf6 {[%clk 0:29:57]} 2. c4 {[%clk 0:29:55]} 2... g6 {[%clk 0:29:54]} 1/2-1/2",
+  "time_control": "1800",
+  "end_time": 1700006000,
+  "rated": true,
+  "uuid": "aaaa-0005",
+  "time_class": "rapid",
+  "rules": "chess",
+  "white": {"rating": 1700, "result": "repetition", "username": "TrackedUser"},
+  "black": {"rating": 1710, "result": "repetition", "username": "Opponent"}
+}

@@ -1,0 +1,12 @@
+{
+  "url": "https://www.chess.com/game/live/1000000004",
+  "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[White \"Opponent\"]\n[Black \"TrackedUser\"]\n[Result \"1-0\"]\n[ECO \"B10\"]\n[ECOUrl \"https://www.chess.com/openings/Caro-Kann-Defense\"]\n\n1. e4 {[%clk 0:09:58]} 1... c6 {[%clk 0:09:57]} 2. d4 {[%clk 0:09:55]} 2... d5 {[%clk 0:09:54]} 1-0",
+  "time_control": "600",
+  "end_time": 1700003500,
+  "rated": true,
+  "uuid": "aaaa-0004",
+  "time_class": "rapid",
+  "rules": "chess",
+  "white": {"rating": 1550, "result": "win", "username": "Opponent"},
+  "black": {"rating": 1560, "result": "timeout", "username": "TrackedUser"}
+}

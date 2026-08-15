@@ -1,0 +1,12 @@
+{
+  "url": "https://www.chess.com/game/live/1000000007",
+  "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 {[%clk 0:00:58]} 1... e5 {[%clk 0:00:57]} 1-0",
+  "time_control": "60",
+  "end_time": 1700006060,
+  "rated": true,
+  "uuid": "aaaa-0007",
+  "time_class": "bullet",
+  "rules": "chess",
+  "white": {"rating": 1400, "result": "win", "username": "TrackedUser"},
+  "black": {"rating": 1390, "result": "checkmated", "username": "Opponent"}
+}

@@ -1,0 +1,12 @@
+{
+  "url": "https://www.chess.com/game/live/1000000001",
+  "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n[ECO \"C50\"]\n[ECOUrl \"https://www.chess.com/openings/Italian-Game\"]\n\n1. e4 {[%clk 0:09:58]} 1... e5 {[%clk 0:09:57]} 2. Nf3 {[%clk 0:09:55]} 2... Nc6 {[%clk 0:09:54]} 1-0",
+  "time_control": "600",
+  "end_time": 1700000300,
+  "rated": true,
+  "uuid": "aaaa-0001",
+  "time_class": "blitz",
+  "rules": "chess",
+  "white": {"rating": 1500, "result": "win", "username": "TrackedUser"},
+  "black": {"rating": 1490, "result": "checkmated", "username": "Opponent"}
+}

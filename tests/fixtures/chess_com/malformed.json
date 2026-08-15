@@ -1,0 +1,9 @@
+{
+  "url": "https://www.chess.com/game/live/1000000099",
+  "pgn": "[Event \"Live Chess\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 e5 1-0",
+  "time_control": "600",
+  "rated": true,
+  "time_class": "blitz",
+  "white": {"rating": 1500, "result": "win", "username": "TrackedUser"},
+  "black": {"rating": 1490, "result": "checkmated", "username": "Opponent"}
+}

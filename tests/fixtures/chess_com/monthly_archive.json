@@ -1,0 +1,36 @@
+{
+  "games": [
+    {
+      "url": "https://www.chess.com/game/live/2000000001",
+      "pgn": "[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 e5 1-0",
+      "time_control": "600",
+      "end_time": 1701000100,
+      "rated": true,
+      "uuid": "bbbb-0001",
+      "time_class": "blitz",
+      "white": {"rating": 1500, "result": "win", "username": "TrackedUser"},
+      "black": {"rating": 1490, "result": "checkmated", "username": "Opponent"}
+    },
+    {
+      "url": "https://www.chess.com/game/live/2000000002",
+      "pgn": "[White \"Opponent\"]\n[Black \"TrackedUser\"]\n[Result \"1-0\"]\n\n1. d4 d5 1-0",
+      "time_control": "600",
+      "end_time": 1701000200,
+      "rated": true,
+      "uuid": "bbbb-0002",
+      "time_class": "blitz",
+      "white": {"rating": 1600, "result": "win", "username": "Opponent"},
+      "black": {"rating": 1590, "result": "resigned", "username": "TrackedUser"}
+    },
+    {
+      "url": "https://www.chess.com/game/live/2000000003",
+      "pgn": "[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 e5 1-0",
+      "time_control": "600",
+      "rated": true,
+      "uuid": "bbbb-0003",
+      "time_class": "blitz",
+      "white": {"rating": 1500, "result": "win", "username": "TrackedUser"},
+      "black": {"rating": 1490, "result": "checkmated", "username": "Opponent"}
+    }
+  ]
+}

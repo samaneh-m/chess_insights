@@ -11,19 +11,20 @@ dashboard.
 
 ## Current Phase
 
-**Phase 4 — Lichess Integration.** This phase adds a Lichess API client and
-normalization layer: given a username, it fetches recent games from the
-official Lichess API and turns them into platform-agnostic
-`NormalizedGame` objects. Phases 1-3's package/CLI/FastAPI/Docker/
-PostgreSQL/schema foundation is unchanged.
+**Phase 5 — Chess.com Integration.** This phase adds a Chess.com API client
+and normalizer alongside Lichess's, both implementing the same
+`ChessPlatformClient` contract and producing the same `NormalizedGame`
+schema. Phases 1-4's package/CLI/FastAPI/Docker/PostgreSQL/schema/Lichess
+foundation is unchanged.
 
-Fetched games are **not persisted** yet (no repositories/sync service), and
-Chess.com is not implemented. See [Current Status](#current-status) below.
+Fetched games are **not persisted** yet — no repositories or sync service.
+See [Current Status](#current-status) below.
 
 - Lichess integration: **implemented**
-- Chess.com integration: not yet implemented
-- Database persistence of imported games: not yet implemented
-- Analytics: not yet implemented
+- Chess.com integration: **implemented**
+- Persistence/sync of imported games: not implemented yet
+- Analytics: not implemented yet
+- Dashboard: not implemented yet
 
 ## Requirements
 
@@ -224,17 +225,71 @@ Errors are raised as `LichessError` subclasses (`LichessUserNotFoundError`,
 An optional `LICHESS_API_TOKEN` env var raises Lichess's rate limits;
 public game history works fine without one.
 
+## Chess.com Integration
+
+`chess_insights.integrations.chess_com.ChessComClient` fetches and
+normalizes a Chess.com player's game history using the official
+[Published Data API](https://www.chess.com/news/view/published-data-api).
+Chess.com exposes games as monthly archives rather than one endpoint; the
+client hides that behind the same `fetch_games` shape as `LichessClient`,
+fetching archives newest-month-first and stopping once `max_games` games
+have been collected so a limited request doesn't download a player's
+entire history.
+
+```python
+import asyncio
+
+from chess_insights.integrations.chess_com import ChessComClient
+
+
+async def main() -> None:
+    async with ChessComClient() as client:
+        games = await client.fetch_games("username", max_games=10)
+
+    for game in games:
+        print(game.external_game_id, game.result.value, game.game_speed.value)
+
+
+asyncio.run(main())
+```
+
+It returns the exact same `list[NormalizedGame]` type as `LichessClient` —
+callers don't need to know or care which platform a game came from. A few
+fields are populated differently because Chess.com's API exposes different
+data than Lichess's:
+
+- `external_game_id` is the game's `uuid` (Chess.com's documented stable
+  identifier), falling back to the numeric id in its `url` if `uuid` is
+  ever absent.
+- `played_at` is the game's `end_time` (Chess.com doesn't expose a start
+  timestamp via this endpoint), so `duration_seconds` is always `None`
+  rather than approximated.
+- `rating_change` is always `None` — Chess.com's Published Data API has no
+  per-game rating-delta field.
+- `opening_name`/`opening_eco` and the ply-count `number_of_moves` are
+  parsed from the `pgn` field (via the `chess` package/python-chess, since
+  Chess.com's PGN includes `{[%clk ...]}` comments and per-side move
+  numbering that make naive text splitting unreliable) rather than coming
+  from separate structured fields like Lichess provides.
+- `termination` is the more descriptive of the two players' raw per-side
+  `result` codes (e.g. `"checkmated"`, `"resigned"`, `"repetition"`) —
+  whichever side didn't just say `"win"`.
+
+Errors are raised as `ChessComError` subclasses (`ChessComUserNotFoundError`,
+`ChessComRateLimitError`, `ChessComAPIError`, `ChessComConnectionError`,
+`ChessComDataError`), mirroring the Lichess exception hierarchy.
+
 ## Test
 
 ```bash
 uv run pytest
 ```
 
-Runs fast unit tests only (database calls are mocked, Lichess HTTP calls
-use `httpx.MockTransport` with fixtures under `tests/fixtures/lichess/` —
-no real network access). Tests that require a real PostgreSQL connection
-live in `tests/integration/` and are marked `integration`; they're
-excluded by default. To run them:
+Runs fast unit tests only (database calls are mocked, Lichess/Chess.com
+HTTP calls use `httpx.MockTransport` with fixtures under
+`tests/fixtures/{lichess,chess_com}/` — no real network access). Tests
+that require a real PostgreSQL connection live in `tests/integration/` and
+are marked `integration`; they're excluded by default. To run them:
 
 ```bash
 docker compose up -d db
@@ -260,8 +315,9 @@ src/chess_insights/
 ├── db/                 # SQLAlchemy engine/session, declarative base, health check
 ├── domain/             # enums shared across the app (ChessPlatform, GameResult, ...)
 ├── services/           # (reserved) application/service layer
-├── integrations/       # platform clients (Lichess) + common client contract
-│   └── lichess/         # HTTP client, normalizer, exceptions
+├── integrations/       # platform clients + common client contract (base.py)
+│   ├── lichess/          # HTTP client, normalizer, exceptions
+│   └── chess_com/        # HTTP client, normalizer, exceptions
 ├── schemas/             # NormalizedGame -- platform-agnostic game representation
 └── analytics/          # (reserved) chess performance analytics
 
@@ -270,7 +326,7 @@ alembic.ini
 Dockerfile
 docker-compose.yml
 
-tests/fixtures/lichess/  # NDJSON/JSON fixtures used by mocked Lichess tests
+tests/fixtures/{lichess,chess_com}/  # fixtures used by mocked integration tests
 ```
 
 `db/models/` (`player.py`, `game.py`, `__init__.py`) holds the ORM models.
@@ -303,10 +359,12 @@ Implemented:
   constraints, check constraints, indexes
 - First real Alembic schema migration (`create player and game tables`)
 - Lichess API client + normalization (`chess_insights.integrations.lichess`)
+- Chess.com API client + normalization (`chess_insights.integrations.chess_com`)
+- A shared `ChessPlatformClient` contract and `NormalizedGame` schema both
+  platform clients produce equivalently
 
 Not implemented yet:
 
-- Chess.com API integration
 - Persisting fetched games to the database (repositories / sync service)
 - Chess performance analytics and insights
 - Visualizations / HTML dashboard

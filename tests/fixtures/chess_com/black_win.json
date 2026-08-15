@@ -1,0 +1,12 @@
+{
+  "url": "https://www.chess.com/game/live/1000000003",
+  "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[White \"Opponent\"]\n[Black \"TrackedUser\"]\n[Result \"0-1\"]\n[ECO \"D02\"]\n[ECOUrl \"https://www.chess.com/openings/London-System\"]\n\n1. d4 {[%clk 0:09:58]} 1... d5 {[%clk 0:09:57]} 2. Nf3 {[%clk 0:09:55]} 2... Nf6 {[%clk 0:09:54]} 0-1",
+  "time_control": "600",
+  "end_time": 1700002600,
+  "rated": true,
+  "uuid": "aaaa-0003",
+  "time_class": "rapid",
+  "rules": "chess",
+  "white": {"rating": 1600, "result": "checkmated", "username": "Opponent"},
+  "black": {"rating": 1590, "result": "win", "username": "TrackedUser"}
+}

@@ -1,0 +1,12 @@
+{
+  "url": "https://www.chess.com/game/live/1000000006",
+  "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n[ECO \"B01\"]\n[ECOUrl \"https://www.chess.com/openings/Scandinavian-Defense\"]\n\n1. e4 {[%clk 0:04:58]} 1... d5 {[%clk 0:04:57]} 2. exd5 {[%clk 0:04:55]} 1-0",
+  "time_control": "300",
+  "end_time": 1700005200,
+  "rated": false,
+  "uuid": "aaaa-0006",
+  "time_class": "blitz",
+  "rules": "chess",
+  "white": {"rating": 1500, "result": "win", "username": "TrackedUser"},
+  "black": {"result": "checkmated", "username": "Opponent"}
+}
