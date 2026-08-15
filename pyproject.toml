@@ -40,6 +40,8 @@ packages = ["src/chess_insights"]
 testpaths = ["tests"]
 addopts = "-ra -m 'not integration'"
 asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 markers = [
     "integration: requires a reachable PostgreSQL database (see tests/integration/README.md)",
 ]

@@ -11,12 +11,12 @@ dashboard.
 
 ## Current Phase
 
-**Phase 2 — Persistence & Container Foundation.** This phase adds PostgreSQL,
-async SQLAlchemy 2.x, and Alembic infrastructure, plus Docker/Docker Compose
-as an additional way to run the application. Phase 1's package/CLI/FastAPI
-foundation is unchanged.
+**Phase 3 — Domain Models & Database Schema.** This phase adds the `Player`
+and `Game` SQLAlchemy ORM models, their relationship, constraints and
+indexes, and the first real Alembic migration. Phases 1-2's package/CLI/
+FastAPI/Docker/PostgreSQL foundation is unchanged.
 
-No chess domain models (`Player`, `Game`, ...), platform integrations, or
+No platform integrations (Lichess/Chess.com clients), game import, or
 analytics are implemented yet. See [Current Status](#current-status) below.
 
 ## Requirements
@@ -132,21 +132,46 @@ application's async SQLAlchemy engine:
 The response never includes the connection string, credentials, or a raw
 traceback; the underlying error is logged server-side instead.
 
+## Database Schema
+
+Two ORM models exist so far (`src/chess_insights/db/models/`):
+
+- **`Player`** (`players`) — a tracked player on a platform. `platform` +
+  `username` is unique (the same username may exist on both platforms).
+- **`Game`** (`games`) — a single game played by a tracked player, with a
+  `player_id` foreign key (`ON DELETE CASCADE`). External metadata that a
+  platform may not provide (ratings, opening, duration, PGN, ...) is
+  nullable; core identity fields (`player_id`, `platform`,
+  `external_game_id`, `played_at`, `result`) are required. Duplicate-import
+  protection is a unique constraint on `(platform, external_game_id,
+  player_id)`. Indexes exist on `(player_id, played_at)`, `opening_name`,
+  and `game_speed`.
+
+Domain enums (`src/chess_insights/domain/enums.py`): `ChessPlatform`,
+`PlayerColor`, `GameResult`, `GameSpeed`. Stored as `VARCHAR` + `CHECK`
+(not native PostgreSQL `ENUM`) to keep future value changes a plain
+migration instead of `ALTER TYPE`.
+
 ## Alembic
 
 The project uses Alembic, configured to read its database URL from the
 application's own settings (`chess_insights.core.config`) rather than
-duplicating it in `alembic.ini`.
+duplicating it in `alembic.ini`. `migrations/env.py` imports
+`chess_insights.db.models` so `players`/`games` are registered on
+`Base.metadata` for autogenerate.
 
 ```bash
 uv run alembic current
 uv run alembic upgrade head
 ```
 
-No domain models exist yet, so there are currently no migration revisions —
-`migrations/versions/` is intentionally empty. Once Phase 3 introduces
-`Player` and `Game` ORM models, the first real migration will be generated
-with `uv run alembic revision --autogenerate`.
+The first migration (`create player and game tables`) creates both tables,
+their constraints, and indexes, with a matching `downgrade()`. Inside
+Docker, once a container is running:
+
+```bash
+docker compose exec app uv run alembic upgrade head
+```
 
 ## Test
 
@@ -185,11 +210,16 @@ src/chess_insights/
 ├── integrations/       # (reserved) external API clients
 └── analytics/          # (reserved) chess performance analytics
 
-migrations/             # Alembic environment (async), no revisions yet
+migrations/             # Alembic environment (async) + revisions
 alembic.ini
 Dockerfile
 docker-compose.yml
 ```
+
+`db/models/` (`player.py`, `game.py`, `__init__.py`) holds the ORM models.
+Importing `chess_insights.db.models` registers them on `Base.metadata` —
+this is the one place that import should happen from (e.g. Alembic's
+`env.py`), rather than relying on incidental import side effects.
 
 The `domain`, `services`, `integrations`, and `analytics` packages still only
 establish architectural boundaries for later phases. `db/` is infrastructure
@@ -211,12 +241,13 @@ Implemented:
 - Docker + Docker Compose (`app` + `db` services)
 - PostgreSQL with a persistent volume and healthcheck
 - Async SQLAlchemy 2.x engine/session infrastructure and declarative `Base`
-- Alembic environment wired to application configuration
 - Database-aware `/health` endpoint
+- `Player` and `Game` ORM models: relationship, uniqueness/duplicate-import
+  constraints, check constraints, indexes
+- First real Alembic schema migration (`create player and game tables`)
 
 Not implemented yet:
 
-- Chess domain models (`Player`, `Game`, ...) and database schema
 - Lichess / Chess.com API integrations
 - Game import / synchronization
 - Chess performance analytics and insights

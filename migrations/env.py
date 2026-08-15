@@ -7,6 +7,7 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from chess_insights.core.config import get_settings
+from chess_insights.db import models  # noqa: F401  (registers models on Base.metadata)
 from chess_insights.db.base import Base
 
 # this is the Alembic Config object, which provides
@@ -22,8 +23,8 @@ if config.config_file_name is not None:
 # database URL, instead of duplicating it in alembic.ini.
 config.set_main_option("sqlalchemy.url", get_settings().sqlalchemy_database_url)
 
-# Application ORM metadata, for 'autogenerate' support. No domain models are
-# defined yet (Phase 2), so this currently carries no tables.
+# Application ORM metadata, for 'autogenerate' support. Importing
+# chess_insights.db.models above registers all ORM models on this metadata.
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,

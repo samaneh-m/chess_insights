@@ -22,7 +22,7 @@ from chess_insights.core.config import get_settings
 def get_engine() -> AsyncEngine:
     """Return the application's async SQLAlchemy engine (created once, cached)."""
     settings = get_settings()
-    return create_async_engine(settings.sqlalchemy_database_url, pool_pre_ping=True)
+    return create_async_engine(settings.sqlalchemy_database_url)
 
 
 @lru_cache

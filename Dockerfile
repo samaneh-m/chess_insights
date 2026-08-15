@@ -8,8 +8,9 @@ WORKDIR /app
 
 RUN pip install --no-cache-dir uv
 
-COPY pyproject.toml uv.lock README.md LICENSE ./
+COPY pyproject.toml uv.lock README.md LICENSE alembic.ini ./
 COPY src ./src
+COPY migrations ./migrations
 
 RUN uv sync --frozen
 
