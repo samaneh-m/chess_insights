@@ -1,0 +1,27 @@
+{
+  "id": "bbbb2222",
+  "rated": true,
+  "variant": "standard",
+  "speed": "rapid",
+  "perf": "rapid",
+  "createdAt": 1700003000000,
+  "lastMoveAt": 1700003500000,
+  "status": "outoftime",
+  "winner": "white",
+  "players": {
+    "white": {
+      "user": {"name": "Opponent", "id": "opponent"},
+      "rating": 1550,
+      "ratingDiff": 4
+    },
+    "black": {
+      "user": {"name": "TrackedUser", "id": "trackeduser"},
+      "rating": 1560,
+      "ratingDiff": -4
+    }
+  },
+  "opening": {"eco": "B10", "name": "Caro-Kann Defense", "ply": 2},
+  "moves": "e4 c6 d4 d5",
+  "pgn": "[Event \"Rated Rapid game\"]\n[Site \"https://lichess.org/bbbb2222\"]\n[White \"Opponent\"]\n[Black \"TrackedUser\"]\n[Result \"1-0\"]\n\n1. e4 c6 2. d4 d5 1-0",
+  "clock": {"initial": 600, "increment": 0, "totalTime": 600}
+}

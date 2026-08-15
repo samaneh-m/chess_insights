@@ -11,13 +11,19 @@ dashboard.
 
 ## Current Phase
 
-**Phase 3 — Domain Models & Database Schema.** This phase adds the `Player`
-and `Game` SQLAlchemy ORM models, their relationship, constraints and
-indexes, and the first real Alembic migration. Phases 1-2's package/CLI/
-FastAPI/Docker/PostgreSQL foundation is unchanged.
+**Phase 4 — Lichess Integration.** This phase adds a Lichess API client and
+normalization layer: given a username, it fetches recent games from the
+official Lichess API and turns them into platform-agnostic
+`NormalizedGame` objects. Phases 1-3's package/CLI/FastAPI/Docker/
+PostgreSQL/schema foundation is unchanged.
 
-No platform integrations (Lichess/Chess.com clients), game import, or
-analytics are implemented yet. See [Current Status](#current-status) below.
+Fetched games are **not persisted** yet (no repositories/sync service), and
+Chess.com is not implemented. See [Current Status](#current-status) below.
+
+- Lichess integration: **implemented**
+- Chess.com integration: not yet implemented
+- Database persistence of imported games: not yet implemented
+- Analytics: not yet implemented
 
 ## Requirements
 
@@ -34,7 +40,7 @@ uv pip install -e ".[dev]"
 ```
 
 This installs the package plus development dependencies (pytest,
-pytest-asyncio, httpx, Ruff).
+pytest-asyncio, Ruff).
 
 ## Run CLI
 
@@ -113,6 +119,9 @@ POSTGRES_PASSWORD=chess
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5432
 DATABASE_URL=postgresql+asyncpg://chess:chess@localhost:5432/chess_insights
+
+# Optional: only needed for higher Lichess API rate limits.
+LICHESS_API_TOKEN=
 ```
 
 `DATABASE_URL`, when set, takes precedence over the individual `POSTGRES_*`
@@ -173,15 +182,59 @@ Docker, once a container is running:
 docker compose exec app uv run alembic upgrade head
 ```
 
+## Lichess Integration
+
+`chess_insights.integrations.lichess.LichessClient` fetches and normalizes
+a Lichess player's game history using the official
+[export-games API](https://lichess.org/api#tag/Games/operation/apiGamesUser)
+(NDJSON format) via `httpx.AsyncClient`. It does not persist anything —
+persistence is a later phase.
+
+```python
+import asyncio
+
+from chess_insights.integrations.lichess import LichessClient
+
+
+async def main() -> None:
+    async with LichessClient() as client:
+        games = await client.fetch_games("username", max_games=10)
+
+    for game in games:
+        print(game.external_game_id, game.result.value, game.game_speed.value)
+
+
+asyncio.run(main())
+```
+
+`fetch_games` returns `list[NormalizedGame]`
+(`chess_insights.schemas.NormalizedGame`) — a platform-agnostic dataclass
+mirroring the `Game` ORM model's fields. `max_games` defaults to 100 (to
+avoid accidentally downloading a huge history); pass `max_games=None` to
+fetch a user's entire history. Results/colors are normalized relative to
+the requested username (`GameResult.WIN` always means *that user* won, not
+White). Games that never really started (`aborted`/`noStart`) are skipped;
+individual malformed records are logged and skipped rather than failing
+the whole fetch.
+
+Errors are raised as `LichessError` subclasses (`LichessUserNotFoundError`,
+`LichessRateLimitError`, `LichessAPIError`, `LichessConnectionError`,
+`LichessDataError`) — raw `httpx` exceptions never escape the client.
+
+An optional `LICHESS_API_TOKEN` env var raises Lichess's rate limits;
+public game history works fine without one.
+
 ## Test
 
 ```bash
 uv run pytest
 ```
 
-Runs fast unit tests only (database calls are mocked). Tests that require a
-real PostgreSQL connection live in `tests/integration/` and are marked
-`integration`; they're excluded by default. To run them:
+Runs fast unit tests only (database calls are mocked, Lichess HTTP calls
+use `httpx.MockTransport` with fixtures under `tests/fixtures/lichess/` —
+no real network access). Tests that require a real PostgreSQL connection
+live in `tests/integration/` and are marked `integration`; they're
+excluded by default. To run them:
 
 ```bash
 docker compose up -d db
@@ -205,15 +258,19 @@ src/chess_insights/
 ├── api/                # FastAPI interface layer (app factory, routes, lifespan)
 ├── core/               # configuration and logging foundations
 ├── db/                 # SQLAlchemy engine/session, declarative base, health check
-├── domain/             # (reserved) pure Python domain models
+├── domain/             # enums shared across the app (ChessPlatform, GameResult, ...)
 ├── services/           # (reserved) application/service layer
-├── integrations/       # (reserved) external API clients
+├── integrations/       # platform clients (Lichess) + common client contract
+│   └── lichess/         # HTTP client, normalizer, exceptions
+├── schemas/             # NormalizedGame -- platform-agnostic game representation
 └── analytics/          # (reserved) chess performance analytics
 
 migrations/             # Alembic environment (async) + revisions
 alembic.ini
 Dockerfile
 docker-compose.yml
+
+tests/fixtures/lichess/  # NDJSON/JSON fixtures used by mocked Lichess tests
 ```
 
 `db/models/` (`player.py`, `game.py`, `__init__.py`) holds the ORM models.
@@ -245,10 +302,11 @@ Implemented:
 - `Player` and `Game` ORM models: relationship, uniqueness/duplicate-import
   constraints, check constraints, indexes
 - First real Alembic schema migration (`create player and game tables`)
+- Lichess API client + normalization (`chess_insights.integrations.lichess`)
 
 Not implemented yet:
 
-- Lichess / Chess.com API integrations
-- Game import / synchronization
+- Chess.com API integration
+- Persisting fetched games to the database (repositories / sync service)
 - Chess performance analytics and insights
 - Visualizations / HTML dashboard

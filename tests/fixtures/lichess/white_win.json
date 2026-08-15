@@ -1,0 +1,27 @@
+{
+  "id": "aaaa1111",
+  "rated": true,
+  "variant": "standard",
+  "speed": "blitz",
+  "perf": "blitz",
+  "createdAt": 1700000000000,
+  "lastMoveAt": 1700000300000,
+  "status": "mate",
+  "winner": "white",
+  "players": {
+    "white": {
+      "user": {"name": "TrackedUser", "id": "trackeduser"},
+      "rating": 1500,
+      "ratingDiff": 8
+    },
+    "black": {
+      "user": {"name": "Opponent", "id": "opponent"},
+      "rating": 1490,
+      "ratingDiff": -8
+    }
+  },
+  "opening": {"eco": "B01", "name": "Scandinavian Defense", "ply": 4},
+  "moves": "e4 d5 exd5 Qxd5 Nc3 Qa5 d4 Nf6 Nf3 c6",
+  "pgn": "[Event \"Rated Blitz game\"]\n[Site \"https://lichess.org/aaaa1111\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 d5 2. exd5 Qxd5 1-0",
+  "clock": {"initial": 300, "increment": 3, "totalTime": 315}
+}

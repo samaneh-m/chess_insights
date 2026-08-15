@@ -1,0 +1,25 @@
+{
+  "id": "dddd1111",
+  "rated": false,
+  "variant": "standard",
+  "speed": "blitz",
+  "perf": "blitz",
+  "createdAt": 1700005000000,
+  "lastMoveAt": 1700005200000,
+  "status": "mate",
+  "winner": "white",
+  "players": {
+    "white": {
+      "user": {"name": "TrackedUser", "id": "trackeduser"},
+      "rating": 1500,
+      "ratingDiff": 0
+    },
+    "black": {
+      "aiLevel": 5
+    }
+  },
+  "opening": {"eco": "B01", "name": "Scandinavian Defense", "ply": 4},
+  "moves": "e4 d5 exd5 Qxd5",
+  "pgn": "[Event \"Casual Blitz game\"]\n[Site \"https://lichess.org/dddd1111\"]\n[White \"TrackedUser\"]\n[Black \"Stockfish level 5\"]\n[Result \"1-0\"]\n\n1. e4 d5 2. exd5 Qxd5 1-0",
+  "clock": {"initial": 300, "increment": 3, "totalTime": 315}
+}

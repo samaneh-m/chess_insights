@@ -1,0 +1,26 @@
+{
+  "id": "eeee1111",
+  "rated": true,
+  "variant": "standard",
+  "speed": "bullet",
+  "perf": "bullet",
+  "createdAt": 1700006000000,
+  "lastMoveAt": 1700006060000,
+  "status": "mate",
+  "winner": "white",
+  "players": {
+    "white": {
+      "user": {"name": "TrackedUser", "id": "trackeduser"},
+      "rating": 1400,
+      "ratingDiff": 5
+    },
+    "black": {
+      "user": {"name": "Opponent", "id": "opponent"},
+      "rating": 1390,
+      "ratingDiff": -5
+    }
+  },
+  "moves": "e4 e5",
+  "pgn": "[Event \"Rated Bullet game\"]\n[Site \"https://lichess.org/eeee1111\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 e5 1-0",
+  "clock": {"initial": 60, "increment": 0, "totalTime": 60}
+}

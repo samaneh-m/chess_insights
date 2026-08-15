@@ -1,0 +1,27 @@
+{
+  "id": "ffff1111",
+  "rated": true,
+  "variant": "chess960",
+  "speed": "warp10",
+  "perf": "chess960",
+  "createdAt": 1700007000000,
+  "lastMoveAt": 1700007120000,
+  "status": "mate",
+  "winner": "white",
+  "players": {
+    "white": {
+      "user": {"name": "TrackedUser", "id": "trackeduser"},
+      "rating": 1450,
+      "ratingDiff": 3
+    },
+    "black": {
+      "user": {"name": "Opponent", "id": "opponent"},
+      "rating": 1440,
+      "ratingDiff": -3
+    }
+  },
+  "opening": {"eco": "A00", "name": "Chess960 start", "ply": 0},
+  "moves": "e4 e5 Qh5 Nc6",
+  "pgn": "[Event \"Rated Chess960 game\"]\n[Site \"https://lichess.org/ffff1111\"]\n[White \"TrackedUser\"]\n[Black \"Opponent\"]\n[Result \"1-0\"]\n\n1. e4 e5 1-0",
+  "clock": {"initial": 120, "increment": 1, "totalTime": 130}
+}

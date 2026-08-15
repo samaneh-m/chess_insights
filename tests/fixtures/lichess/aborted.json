@@ -1,0 +1,15 @@
+{
+  "id": "gggg1111",
+  "rated": true,
+  "variant": "standard",
+  "speed": "bullet",
+  "perf": "bullet",
+  "createdAt": 1700008000000,
+  "lastMoveAt": 1700008010000,
+  "status": "aborted",
+  "players": {
+    "white": {"user": {"name": "TrackedUser", "id": "trackeduser"}, "rating": 1400},
+    "black": {"user": {"name": "Opponent", "id": "opponent"}, "rating": 1390}
+  },
+  "moves": "e4"
+}

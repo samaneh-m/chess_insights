@@ -1,0 +1,11 @@
+{
+  "rated": true,
+  "variant": "standard",
+  "speed": "blitz",
+  "status": "mate",
+  "winner": "white",
+  "players": {
+    "white": {"user": {"name": "TrackedUser"}, "rating": 1500},
+    "black": {"user": {"name": "Opponent"}, "rating": 1490}
+  }
+}
