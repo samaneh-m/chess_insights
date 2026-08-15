@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
+from chess_insights.analytics.models import GameRecord
 from chess_insights.api.app import create_app
 from chess_insights.domain.enums import ChessPlatform, GameResult, GameSpeed, PlayerColor
 from chess_insights.schemas.game import NormalizedGame
@@ -73,4 +74,33 @@ def make_normalized_game(
         rated=rated,
         termination=termination,
         pgn=pgn,
+    )
+
+
+def make_game_record(
+    *,
+    played_at: datetime | None = None,
+    player_color: PlayerColor | None = PlayerColor.WHITE,
+    player_rating: int | None = 1500,
+    result: GameResult = GameResult.WIN,
+    opening_name: str | None = "Italian Game",
+    opening_eco: str | None = "C50",
+    number_of_moves: int | None = 30,
+    duration_seconds: int | None = 300,
+    game_speed: GameSpeed | None = GameSpeed.BLITZ,
+    time_control: str | None = "300+3",
+) -> GameRecord:
+    """Build a GameRecord with sane defaults, overriding only what a test
+    cares about."""
+    return GameRecord(
+        played_at=played_at or datetime(2024, 1, 1, 12, tzinfo=timezone.utc),
+        player_color=player_color,
+        player_rating=player_rating,
+        result=result,
+        opening_name=opening_name,
+        opening_eco=opening_eco,
+        number_of_moves=number_of_moves,
+        duration_seconds=duration_seconds,
+        game_speed=game_speed,
+        time_control=time_control,
     )

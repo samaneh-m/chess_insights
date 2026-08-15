@@ -3,14 +3,19 @@
 import argparse
 import asyncio
 import logging
+from zoneinfo import ZoneInfoNotFoundError
 
 import uvicorn
 
 from chess_insights import __version__
+from chess_insights.analytics.openings import (
+    DEFAULT_MINIMUM_OPENING_GAMES,
+)
 from chess_insights.core.config import get_settings
 from chess_insights.core.logging import configure_logging
 from chess_insights.db.session import dispose_engine, get_sessionmaker
 from chess_insights.domain.enums import ChessPlatform
+from chess_insights.services.analytics import PlayerAnalyticsService, PlayerNotFoundError
 from chess_insights.services.sync import GameSyncService, SyncError
 
 logger = logging.getLogger(__name__)
@@ -46,6 +51,23 @@ def build_parser() -> argparse.ArgumentParser:
         type=int,
         default=100,
         help="Maximum number of games to fetch (default: 100)",
+    )
+
+    analyze_parser = subparsers.add_parser(
+        "analyze", help="Compute performance analytics for a stored player"
+    )
+    analyze_parser.add_argument("player_id", type=int, help="Player id to analyze")
+    analyze_parser.add_argument(
+        "--timezone",
+        default="UTC",
+        help="IANA timezone for time-of-day analysis (default: UTC)",
+    )
+    analyze_parser.add_argument(
+        "--minimum-opening-games",
+        type=int,
+        default=DEFAULT_MINIMUM_OPENING_GAMES,
+        help=f"Minimum games for an opening to rank as best/worst "
+        f"(default: {DEFAULT_MINIMUM_OPENING_GAMES})",
     )
 
     return parser
@@ -92,6 +114,51 @@ async def run_sync(platform_arg: str, username: str, max_games: int) -> int:
     return 0
 
 
+async def run_analyze(player_id: int, *, timezone_name: str, minimum_opening_games: int) -> int:
+    """Print a concise performance summary for a stored player.
+
+    Returns a process exit code (non-zero on any failure); never lets a
+    raw traceback reach the terminal for an expected error (missing
+    player, bad timezone, database unavailable).
+    """
+    settings = get_settings()
+    configure_logging(settings)
+
+    try:
+        session_factory = get_sessionmaker()
+        async with session_factory() as session:
+            service = PlayerAnalyticsService(session)
+            report = await service.build_report(
+                player_id,
+                timezone_name=timezone_name,
+                minimum_opening_games=minimum_opening_games,
+            )
+    except PlayerNotFoundError as exc:
+        logger.error("%s", exc)
+        return 1
+    except ZoneInfoNotFoundError as exc:
+        logger.error("Invalid timezone %r: %s", timezone_name, exc)
+        return 1
+    except Exception as exc:
+        logger.error("Analytics failed: %s", exc)
+        return 1
+    finally:
+        await dispose_engine()
+
+    overall = report.overall
+    rating_change = report.rating.rating_change
+    print(f"Player ID: {report.player_id}")
+    print(f"Games: {overall.games}")
+    print(f"Wins: {overall.wins}")
+    print(f"Losses: {overall.losses}")
+    print(f"Draws: {overall.draws}")
+    print(f"Win rate: {overall.win_rate:.2f}%")
+    print(
+        f"Rating change: {rating_change:+d}" if rating_change is not None else "Rating change: n/a"
+    )
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Entry point for the ``chess_insights`` command-line interface."""
     parser = build_parser()
@@ -103,6 +170,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "sync":
         return asyncio.run(run_sync(args.platform, args.username, args.max_games))
+
+    if args.command == "analyze":
+        return asyncio.run(
+            run_analyze(
+                args.player_id,
+                timezone_name=args.timezone,
+                minimum_opening_games=args.minimum_opening_games,
+            )
+        )
 
     parser.print_help()
     return 0

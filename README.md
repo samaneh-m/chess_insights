@@ -11,18 +11,19 @@ dashboard.
 
 ## Current Phase
 
-**Phase 6 — Synchronization & Persistence.** This phase connects the
-Lichess/Chess.com integrations to PostgreSQL: a repository layer plus a
-`GameSyncService` that fetches a player's games and stores the new ones,
-deduplicated, in one transaction. This is the first phase with real
-end-to-end functionality: `uv run -m chess_insights sync ...` actually
-imports and stores games.
+**Phase 7 — Analytics Engine.** This phase adds a pure-Python analytics
+engine that computes structured performance statistics (overall, by
+color, by opening, rating trend, time-of-day, game length, time control)
+from a player's persisted games, plus `uv run -m chess_insights analyze
+PLAYER_ID`.
 
 - Lichess import + persistence: **implemented**
 - Chess.com import + persistence: **implemented**
 - Deduplicated synchronization: **implemented**
-- Analytics: not implemented yet
-- Dashboard: not implemented yet
+- Overall / color / opening / rating / time-of-day / game-length /
+  time-control analytics: **implemented**
+- Textual insight generation: not implemented yet
+- PNG reports / web dashboard: not implemented yet
 
 ## Requirements
 
@@ -97,6 +98,35 @@ Skipped existing games: 3
 Running the same command again is safe and idempotent — already-imported
 games are skipped, not duplicated or re-inserted. Exits non-zero on
 failure (unknown user, rate limited, network error, or a database error).
+
+## Analyzing a Player
+
+```bash
+uv run -m chess_insights analyze PLAYER_ID
+uv run -m chess_insights analyze PLAYER_ID --timezone Europe/Berlin --minimum-opening-games 5
+```
+
+`PLAYER_ID` is the numeric `Player.id` (find it via a `sync` run, or by
+querying `players`). Requires a reachable, migrated PostgreSQL database,
+same as `sync`. Example output:
+
+```text
+Player ID: 53
+Games: 20
+Wins: 6
+Losses: 5
+Draws: 9
+Win rate: 30.00%
+Rating change: -621
+```
+
+Only this concise summary is printed — not the full breakdown by color,
+opening, time-of-day, game length, or speed; those are available
+programmatically via `PlayerAnalyticsService.build_report(...)` (see
+[Analytics Engine](#analytics-engine) below) for a future dashboard/report
+phase to consume. Exits non-zero, with a clear message and no raw
+traceback, if the player doesn't exist, the timezone is invalid, or the
+database is unavailable.
 
 ## PostgreSQL / Docker Setup
 
@@ -338,6 +368,63 @@ selection (`ChessPlatform.LICHESS`/`CHESS_COM` -> `LichessClient`/
 `ChessComClient`) is centralized in one small factory mapping, injectable
 for testing.
 
+## Analytics Engine
+
+`chess_insights.analytics` is pure Python — no SQLAlchemy, no FastAPI, no
+generated text, no charts. It computes structured facts from a sequence of
+`GameRecord` (an application-owned, ORM-independent input type). Loading
+persisted games and calling into `analytics` is the one job of
+`chess_insights.services.analytics.PlayerAnalyticsService`:
+
+```text
+Player.id -> load Game rows (1 query) -> map to GameRecord
+          -> analyze_overall / analyze_by_color / analyze_openings /
+             analyze_rating / analyze_time_of_day / analyze_game_length /
+             analyze_speed
+          -> AnalyticsReport
+```
+
+Raises `PlayerNotFoundError` for an unknown player id; a valid player with
+zero games produces a report where every statistic is zero/empty (not an
+error).
+
+**Percentage convention**: every `*_rate` field is 0.0-100.0 (e.g. `63.5`
+means 63.5%), rounded to 2 decimal places, computed in exactly one place
+(`PerformanceStats.from_results`) so every breakdown (overall, color,
+opening, time-of-day, game length, speed) rounds identically.
+
+- **Overall / color** (`analyze_overall`, `analyze_by_color`): win/loss/draw
+  counts and rates. Games with `player_color is None` count toward overall
+  but are excluded from the White/Black breakdown.
+- **Opening** (`analyze_openings`): grouped by `(opening_eco, opening_name)`;
+  games with no opening name are excluded (not merged into "Unknown").
+  `top_openings`/`bottom_openings` only include openings with
+  `games >= minimum_opening_games` (default **3**) — ranked deterministically
+  by win rate, then sample size, then name.
+- **Rating** (`analyze_rating`): chronological `RatingPoint` series (ignoring
+  games with no rating), `earliest`/`latest`/`highest`/`lowest_rating`,
+  `rating_change = latest - earliest`, and a conservative `RatingDirection`
+  (`improving`/`declining`/`stable`/`insufficient_data`) — requires at least
+  5 rated games *and* a ≥20-point change from earliest to latest to call it
+  `improving`/`declining`; otherwise `stable` (or `insufficient_data` below
+  5 points). No regression/ML — a small, transparent, documented threshold.
+- **Time of day** (`analyze_time_of_day`): local-hour buckets — Morning
+  06:00-11:59, Afternoon 12:00-17:59, Evening 18:00-22:59, Late Night
+  23:00-05:59 — converted from UTC via `zoneinfo.ZoneInfo(timezone_name)`
+  (default `"UTC"`; an unknown name raises `ZoneInfoNotFoundError` rather
+  than silently falling back).
+- **Game length** (`analyze_game_length`): buckets by **ply count**
+  (half-moves — the same convention `number_of_moves` has used since
+  Phase 4), not full moves: Short 0-39, Medium 40-79, Long 80+. Games with
+  no ply count are excluded (never assumed "short").
+- **Time control / speed** (`analyze_speed`): grouped by `GameSpeed`;
+  `game_speed is None` is grouped under `GameSpeed.UNKNOWN` rather than
+  dropped.
+
+`AnalyticsReport` bundles all seven results plus `player_id`. It contains
+only structured facts — no generated sentences, no images; that's a later
+phase's job, built on top of this report.
+
 ## Test
 
 ```bash
@@ -346,11 +433,13 @@ uv run pytest
 
 Runs fast unit tests only (database calls are mocked, Lichess/Chess.com
 HTTP calls use `httpx.MockTransport` with fixtures under
-`tests/fixtures/{lichess,chess_com}/` — no real network access). Tests
+`tests/fixtures/{lichess,chess_com}/`, analytics tests use plain
+`GameRecord`/`NormalizedGame` factories — no real network access). Tests
 that require a real PostgreSQL connection — including `PlayerRepository`/
-`GameRepository` and `GameSyncService` (with mocked platform clients but a
-real database) — live in `tests/integration/` and are marked `integration`;
-they're excluded by default. To run them:
+`GameRepository`, `GameSyncService`, and `PlayerAnalyticsService` (each
+with mocked platform clients/fake sessions where relevant, but a real
+database for the integration variant) — live in `tests/integration/` and
+are marked `integration`; they're excluded by default. To run them:
 
 ```bash
 docker compose up -d db
@@ -376,12 +465,15 @@ src/chess_insights/
 ├── db/                 # SQLAlchemy engine/session, declarative base, health check
 ├── domain/             # enums shared across the app (ChessPlatform, GameResult, ...)
 ├── repositories/        # Player/Game persistence (AsyncSession in, no HTTP)
-├── services/             # GameSyncService: wires integrations to repositories
+├── services/             # GameSyncService + PlayerAnalyticsService
 ├── integrations/       # platform clients + common client contract (base.py)
 │   ├── lichess/          # HTTP client, normalizer, exceptions
 │   └── chess_com/        # HTTP client, normalizer, exceptions
 ├── schemas/             # NormalizedGame -- platform-agnostic game representation
-└── analytics/          # (reserved) chess performance analytics
+└── analytics/           # pure Python performance analytics (no DB/FastAPI)
+    ├── models.py           # GameRecord input + all typed result dataclasses
+    ├── overall.py, color.py, openings.py, rating.py,
+    │   time_of_day.py, game_length.py, time_control.py
 
 migrations/             # Alembic environment (async) + revisions
 alembic.ini
@@ -396,9 +488,8 @@ Importing `chess_insights.db.models` registers them on `Base.metadata` —
 this is the one place that import should happen from (e.g. Alembic's
 `env.py`), rather than relying on incidental import side effects.
 
-`analytics/` still only establishes an architectural boundary for a later
-phase. `db/` is infrastructure only — it contains no chess-specific
-business logic. The intended dependency direction is:
+`db/` is infrastructure only — it contains no chess-specific business
+logic. The intended dependency direction is:
 
 ```text
 CLI -> Application (API) -> Services / Domain -> Integrations / Persistence
@@ -427,8 +518,12 @@ Implemented:
 - `GameSyncService` + `uv run -m chess_insights sync <platform> <username>`:
   fetch, deduplicate, and persist a player's games from either platform in
   one transaction
+- Pure Python analytics engine: overall, color, opening (with ranked
+  best/worst), rating trend, time-of-day, game-length, and time-control
+  performance breakdowns
+- `PlayerAnalyticsService` + `uv run -m chess_insights analyze <player_id>`
 
 Not implemented yet:
 
-- Chess performance analytics and insights
-- Visualizations / HTML dashboard
+- Textual insight generation (e.g. "you play worse at night")
+- Visualizations / PNG reports / HTML dashboard
