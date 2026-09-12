@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from io import StringIO
 from itertools import islice
 from typing import Any
@@ -112,3 +113,58 @@ def extract_opening(game: dict[str, Any]) -> dict[str, str | list[str] | None]:
         board.push(move)
     opening["opening_moves"] = moves or None
     return opening
+
+
+def extract_game_times(game: dict[str, Any]) -> dict[str, datetime | float | None]:
+    times: dict[str, datetime | None] = {"start_time": None, "end_time": None}
+    for field in times:
+        timestamp = game.get(field)
+        if isinstance(timestamp, bool) or not isinstance(timestamp, (int, float)):
+            continue
+        try:
+            times[field] = datetime.fromtimestamp(timestamp, tz=UTC)
+        except (ValueError, OverflowError, OSError):
+            pass
+
+    headers = None
+    pgn = game.get("pgn")
+    if (
+        any(value is None for value in times.values())
+        and isinstance(pgn, str)
+        and pgn.strip()
+    ):
+        try:
+            headers = chess.pgn.read_headers(StringIO(pgn))
+        except (ValueError, IndexError):
+            pass
+    if headers is None:
+        headers = {}
+
+    candidates = [("start_time", "UTCDate", "UTCTime")]
+    if headers.get("Timezone", "").strip().upper() == "UTC":
+        candidates.extend(
+            [
+                ("start_time", "Date", "StartTime"),
+                ("end_time", "EndDate", "EndTime"),
+            ]
+        )
+
+    for field, date_header, time_header in candidates:
+        if times[field] is not None:
+            continue
+        date_value = headers.get(date_header)
+        time_value = headers.get(time_header)
+        if not date_value or not time_value:
+            continue
+        try:
+            times[field] = datetime.strptime(
+                f"{date_value.strip()} {time_value.strip()}", "%Y.%m.%d %H:%M:%S"
+            ).replace(tzinfo=UTC)
+        except ValueError:
+            pass
+    start = times["start_time"]
+    end = times["end_time"]
+    duration = None
+    if start is not None and end is not None and end >= start:
+        duration = (end - start).total_seconds()
+    return {**times, "duration_seconds": duration}
