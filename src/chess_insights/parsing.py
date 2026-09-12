@@ -168,3 +168,13 @@ def extract_game_times(game: dict[str, Any]) -> dict[str, datetime | float | Non
     if start is not None and end is not None and end >= start:
         duration = (end - start).total_seconds()
     return {**times, "duration_seconds": duration}
+
+
+def parse_game(game: dict[str, Any], username: str) -> dict[str, Any]:
+    return {
+        **extract_color_and_opponent(game, username),
+        "result": extract_result(game, username),
+        "rating": extract_rating(game, username),
+        **extract_opening(game),
+        **extract_game_times(game),
+    }

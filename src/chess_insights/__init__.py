@@ -5,6 +5,7 @@ from .parsing import (
     extract_opening,
     extract_rating,
     extract_result,
+    parse_game,
 )
 
 __all__ = [
@@ -15,4 +16,5 @@ __all__ = [
     "extract_rating",
     "extract_result",
     "get_player_games",
+    "parse_game",
 ]
