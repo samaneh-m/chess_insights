@@ -1,4 +1,8 @@
+from io import StringIO
+from itertools import islice
 from typing import Any
+
+import chess.pgn
 
 
 def extract_color_and_opponent(
@@ -65,3 +69,46 @@ def extract_rating(game: dict[str, Any], username: str) -> int | None:
     if isinstance(rating, bool) or not isinstance(rating, int) or rating < 0:
         return None
     return rating
+
+
+def extract_opening(game: dict[str, Any]) -> dict[str, str | list[str] | None]:
+    opening: dict[str, str | list[str] | None] = {
+        "opening_moves": None,
+        "eco": None,
+        "opening_name": None,
+        "opening_url": None,
+    }
+    url = game.get("eco")
+    if isinstance(url, str) and url.strip() not in {"", "?", "-"}:
+        opening["opening_url"] = url.strip()
+
+    pgn = game.get("pgn")
+    if not isinstance(pgn, str) or not pgn.strip():
+        return opening
+
+    try:
+        parsed_game = chess.pgn.read_game(StringIO(pgn))
+    except (ValueError, IndexError):
+        return opening
+    if parsed_game is None:
+        return opening
+
+    for header, field in (
+        ("ECO", "eco"),
+        ("Opening", "opening_name"),
+        ("ECOUrl", "opening_url"),
+    ):
+        value = parsed_game.headers.get(header)
+        if isinstance(value, str) and value.strip() not in {"", "?", "-"}:
+            opening[field] = value.strip()
+
+    if parsed_game.errors:
+        return opening
+
+    board = parsed_game.board()
+    moves = []
+    for move in islice(parsed_game.mainline_moves(), 6):
+        moves.append(board.san(move))
+        board.push(move)
+    opening["opening_moves"] = moves or None
+    return opening
