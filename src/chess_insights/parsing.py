@@ -25,3 +25,35 @@ def extract_color_and_opponent(
     color = matches[0]
     opponent_color = "black" if color == "white" else "white"
     return {"color": color, "opponent": players[opponent_color]}
+
+
+def extract_result(game: dict[str, Any], username: str) -> str | None:
+    color = extract_color_and_opponent(game, username)["color"]
+    result = game[color].get("result")
+    if not isinstance(result, str):
+        return None
+
+    result = result.strip().casefold()
+    if result == "win":
+        return "win"
+    if result in {
+        "checkmated",
+        "timeout",
+        "resigned",
+        "lose",
+        "abandoned",
+        "kingofthehill",
+        "threecheck",
+        "bughousepartnerlose",
+    }:
+        return "loss"
+    if result in {
+        "agreed",
+        "repetition",
+        "stalemate",
+        "insufficient",
+        "50move",
+        "timevsinsufficient",
+    }:
+        return "draw"
+    return None

@@ -1,4 +1,9 @@
 from .chesscom import ChessComError, get_player_games
-from .parsing import extract_color_and_opponent
+from .parsing import extract_color_and_opponent, extract_result
 
-__all__ = ["ChessComError", "extract_color_and_opponent", "get_player_games"]
+__all__ = [
+    "ChessComError",
+    "extract_color_and_opponent",
+    "extract_result",
+    "get_player_games",
+]
