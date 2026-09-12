@@ -57,3 +57,11 @@ def extract_result(game: dict[str, Any], username: str) -> str | None:
     }:
         return "draw"
     return None
+
+
+def extract_rating(game: dict[str, Any], username: str) -> int | None:
+    color = extract_color_and_opponent(game, username)["color"]
+    rating = game[color].get("rating")
+    if isinstance(rating, bool) or not isinstance(rating, int) or rating < 0:
+        return None
+    return rating
