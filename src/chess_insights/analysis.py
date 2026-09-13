@@ -85,3 +85,19 @@ def calculate_rating_trend(
     for points in trends.values():
         points.sort(key=lambda point: point["date"])
     return trends
+
+
+def calculate_hourly_stats(
+    games: list[dict[str, Any]],
+) -> dict[int, dict[str, int | float | None]]:
+    hourly_games: dict[int, list[dict[str, Any]]] = {hour: [] for hour in range(24)}
+    for game in games:
+        start = game.get("start_time")
+        if not isinstance(start, datetime) or start.utcoffset() is None:
+            continue
+        hour = start.astimezone(UTC).hour
+        hourly_games[hour].append(game)
+
+    return {
+        hour: calculate_overall_stats(group) for hour, group in hourly_games.items()
+    }

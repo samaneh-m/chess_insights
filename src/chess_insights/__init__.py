@@ -1,5 +1,6 @@
 from .analysis import (
     calculate_color_stats,
+    calculate_hourly_stats,
     calculate_opening_stats,
     calculate_overall_stats,
     calculate_rating_trend,
@@ -18,6 +19,7 @@ from .processing import get_processed_games
 __all__ = [
     "ChessComError",
     "calculate_color_stats",
+    "calculate_hourly_stats",
     "calculate_opening_stats",
     "calculate_overall_stats",
     "calculate_rating_trend",
