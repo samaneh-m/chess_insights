@@ -1,4 +1,5 @@
 import re
+from datetime import UTC, datetime
 from typing import Any
 
 
@@ -59,3 +60,28 @@ def calculate_opening_stats(
         eco: calculate_overall_stats(opening_games)
         for eco, opening_games in openings.items()
     }
+
+
+def calculate_rating_trend(
+    games: list[dict[str, Any]],
+) -> dict[str, list[dict[str, datetime | int]]]:
+    trends: dict[str, list[dict[str, datetime | int]]] = {}
+    for game in games:
+        if game.get("rated") is not True:
+            continue
+        time_class = game.get("time_class")
+        if time_class not in ("bullet", "blitz", "rapid", "daily"):
+            continue
+        rating = game.get("rating")
+        if isinstance(rating, bool) or not isinstance(rating, int) or rating < 0:
+            continue
+        date = game.get("end_time")
+        if not isinstance(date, datetime) or date.utcoffset() is None:
+            continue
+        trends.setdefault(time_class, []).append(
+            {"date": date.astimezone(UTC), "rating": rating}
+        )
+
+    for points in trends.values():
+        points.sort(key=lambda point: point["date"])
+    return trends

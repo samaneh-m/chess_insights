@@ -2,6 +2,7 @@ from .analysis import (
     calculate_color_stats,
     calculate_opening_stats,
     calculate_overall_stats,
+    calculate_rating_trend,
 )
 from .chesscom import ChessComError, get_player_games
 from .parsing import (
@@ -19,6 +20,7 @@ __all__ = [
     "calculate_color_stats",
     "calculate_opening_stats",
     "calculate_overall_stats",
+    "calculate_rating_trend",
     "extract_color_and_opponent",
     "extract_game_times",
     "extract_opening",

@@ -171,10 +171,15 @@ def extract_game_times(game: dict[str, Any]) -> dict[str, datetime | float | Non
 
 
 def parse_game(game: dict[str, Any], username: str) -> dict[str, Any]:
+    time_class = game.get("time_class")
+    time_class = time_class.strip().lower() if isinstance(time_class, str) else None
+    rated = game.get("rated")
     return {
         **extract_color_and_opponent(game, username),
         "result": extract_result(game, username),
         "rating": extract_rating(game, username),
+        "time_class": time_class or None,
+        "rated": rated if isinstance(rated, bool) else None,
         **extract_opening(game),
         **extract_game_times(game),
     }
