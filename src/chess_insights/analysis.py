@@ -1,5 +1,6 @@
 import re
 from datetime import UTC, datetime
+from math import isfinite
 from typing import Any
 
 
@@ -101,3 +102,33 @@ def calculate_hourly_stats(
     return {
         hour: calculate_overall_stats(group) for hour, group in hourly_games.items()
     }
+
+
+def calculate_duration_stats(
+    games: list[dict[str, Any]],
+) -> dict[str, dict[str, int | float | None]]:
+    groups: dict[str, list[dict[str, Any]]] = {
+        name: [] for name in ("short", "medium", "long", "daily", "unknown")
+    }
+    for game in games:
+        time_class = game.get("time_class")
+        duration = game.get("duration_seconds")
+        if time_class == "daily":
+            group = "daily"
+        elif (
+            time_class not in ("bullet", "blitz", "rapid")
+            or isinstance(duration, bool)
+            or not isinstance(duration, (int, float))
+            or (isinstance(duration, float) and not isfinite(duration))
+            or duration < 0
+        ):
+            group = "unknown"
+        elif duration < 300:
+            group = "short"
+        elif duration < 900:
+            group = "medium"
+        else:
+            group = "long"
+        groups[group].append(game)
+
+    return {name: calculate_overall_stats(group) for name, group in groups.items()}
