@@ -30,3 +30,14 @@ def calculate_overall_stats(
         "unknown_results": unknown,
         "win_rate": win_rate,
     }
+
+
+def calculate_color_stats(
+    games: list[dict[str, Any]],
+) -> dict[str, dict[str, int | float | None]]:
+    return {
+        color: calculate_overall_stats(
+            [game for game in games if game.get("color") == color]
+        )
+        for color in ("white", "black")
+    }

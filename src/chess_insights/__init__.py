@@ -1,4 +1,4 @@
-from .analysis import calculate_overall_stats
+from .analysis import calculate_color_stats, calculate_overall_stats
 from .chesscom import ChessComError, get_player_games
 from .parsing import (
     extract_color_and_opponent,
@@ -12,6 +12,7 @@ from .processing import get_processed_games
 
 __all__ = [
     "ChessComError",
+    "calculate_color_stats",
     "calculate_overall_stats",
     "extract_color_and_opponent",
     "extract_game_times",
