@@ -1,3 +1,4 @@
+import re
 from typing import Any
 
 
@@ -40,4 +41,21 @@ def calculate_color_stats(
             [game for game in games if game.get("color") == color]
         )
         for color in ("white", "black")
+    }
+
+
+def calculate_opening_stats(
+    games: list[dict[str, Any]],
+) -> dict[str, dict[str, int | float | None]]:
+    openings: dict[str, list[dict[str, Any]]] = {}
+    for game in games:
+        eco = game.get("eco")
+        eco = eco.strip().upper() if isinstance(eco, str) else ""
+        if not re.fullmatch(r"[A-E][0-9]{2}", eco):
+            eco = "unknown"
+        openings.setdefault(eco, []).append(game)
+
+    return {
+        eco: calculate_overall_stats(opening_games)
+        for eco, opening_games in openings.items()
     }
