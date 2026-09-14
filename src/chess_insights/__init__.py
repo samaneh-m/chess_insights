@@ -16,7 +16,11 @@ from .parsing import (
     parse_game,
 )
 from .processing import get_processed_games
-from .visualization import plot_color_results, plot_overall_results
+from .visualization import (
+    plot_color_results,
+    plot_opening_results,
+    plot_overall_results,
+)
 
 __all__ = [
     "ChessComError",
@@ -35,5 +39,6 @@ __all__ = [
     "get_processed_games",
     "parse_game",
     "plot_color_results",
+    "plot_opening_results",
     "plot_overall_results",
 ]

@@ -49,6 +49,70 @@ def plot_overall_results(
     return path
 
 
+def plot_opening_results(
+    stats: dict[str, dict[str, int | float | None]], output_path: str | Path
+) -> Path:
+    path = Path(output_path)
+    if path.suffix.lower() != ".png":
+        raise ValueError("The output file must have a .png extension.")
+
+    openings = sorted(stats, key=lambda eco: (eco == "unknown", eco))
+    for eco in openings:
+        count = stats[eco]["total_games"]
+        rate = stats[eco]["win_rate"]
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise ValueError("Game counts must be non-negative integers.")
+        if rate is not None and (
+            isinstance(rate, bool)
+            or not isinstance(rate, (int, float))
+            or not 0 <= rate <= 100
+        ):
+            raise ValueError("Win rates must be between 0 and 100, or None.")
+
+    figure = Figure(figsize=(9, max(4, len(openings) * 0.45 + 2)), facecolor="white")
+    FigureCanvasAgg(figure)
+    axes = figure.subplots()
+    labels = []
+    for position, eco in enumerate(openings):
+        rate = stats[eco]["win_rate"]
+        name = "Unknown" if eco == "unknown" else eco
+        labels.append(f"{name} (n={stats[eco]['total_games']})")
+        if rate is None:
+            axes.text(2, position, "N/A", va="center", color="#555555")
+        else:
+            axes.barh(
+                position,
+                rate,
+                height=0.6,
+                color="#64829E" if eco == "unknown" else "#27836B",
+            )
+            axes.text(rate + 2, position, f"{rate:.1f}%", va="center")
+
+    axes.set_yticks(range(len(openings)), labels)
+    axes.invert_yaxis()
+    axes.set_xlim(0, 115)
+    axes.set_xticks(range(0, 101, 20))
+    axes.set_xlabel("Win rate (%)")
+    axes.set_title("Win rate by opening", fontsize=18, pad=18)
+    axes.set_axisbelow(True)
+    axes.grid(axis="x", alpha=0.2)
+    axes.spines[["top", "right"]].set_visible(False)
+    if not openings:
+        axes.text(0.5, 0.5, "No opening data", transform=axes.transAxes, ha="center")
+    figure.text(
+        0.5,
+        0.03,
+        "n = all games; win rate uses known results only. N/A = no known results.",
+        ha="center",
+        fontsize=9,
+        color="#555555",
+    )
+    figure.tight_layout(rect=(0, 0.08, 1, 1))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, format="png", dpi=150)
+    return path
+
+
 def plot_color_results(
     stats: dict[str, dict[str, int | float | None]], output_path: str | Path
 ) -> Path:
