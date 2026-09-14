@@ -1,6 +1,8 @@
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
+from matplotlib.dates import AutoDateLocator, ConciseDateFormatter
 from matplotlib.figure import Figure
 from matplotlib.ticker import MaxNLocator
 
@@ -44,6 +46,69 @@ def plot_overall_results(
         color="#555555",
     )
     figure.tight_layout(rect=(0, 0.07, 1, 1))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, format="png", dpi=150)
+    return path
+
+
+def plot_rating_trend(
+    trends: dict[str, list[dict[str, datetime | int]]], output_path: str | Path
+) -> Path:
+    path = Path(output_path)
+    if path.suffix.lower() != ".png":
+        raise ValueError("The output file must have a .png extension.")
+
+    series = {}
+    for time_class, points in trends.items():
+        values = []
+        for point in points:
+            date = point["date"]
+            rating = point["rating"]
+            if not isinstance(date, datetime) or date.utcoffset() is None:
+                raise ValueError("Rating dates must include a timezone.")
+            if isinstance(rating, bool) or not isinstance(rating, int) or rating < 0:
+                raise ValueError("Ratings must be non-negative integers.")
+            values.append((date.astimezone(UTC), rating))
+        if values:
+            series[time_class] = sorted(values, key=lambda value: value[0])
+
+    figure = Figure(figsize=(9, max(4, 3.5 * len(series))), facecolor="white")
+    FigureCanvasAgg(figure)
+    if not series:
+        axes = figure.subplots()
+        axes.set_title("Rating over time", fontsize=18, pad=18)
+        axes.text(0.5, 0.5, "No rating data", transform=axes.transAxes, ha="center")
+        axes.set_axis_off()
+    else:
+        panels = figure.subplots(nrows=len(series), squeeze=False)
+        colors = {"bullet": "#64829E", "blitz": "#C95757", "rapid": "#27836B"}
+        for axes, (time_class, values) in zip(
+            panels[:, 0], series.items(), strict=True
+        ):
+            dates, ratings = zip(*values, strict=True)
+            axes.plot(
+                dates,
+                ratings,
+                marker="o",
+                markersize=3,
+                linewidth=1.5,
+                color=colors.get(time_class, "#876AA6"),
+            )
+            locator = AutoDateLocator(tz=UTC, minticks=3, maxticks=6)
+            axes.xaxis.set_major_locator(locator)
+            axes.xaxis.set_major_formatter(ConciseDateFormatter(locator, tz=UTC))
+            if dates[0] == dates[-1]:
+                axes.set_xlim(
+                    dates[0] - timedelta(hours=12), dates[0] + timedelta(hours=12)
+                )
+            axes.set_title(f"{time_class.title()} rating", fontsize=15, pad=12)
+            axes.set_xlabel("Date (UTC)")
+            axes.set_ylabel("Rating")
+            axes.yaxis.set_major_locator(MaxNLocator(integer=True))
+            axes.grid(alpha=0.2)
+            axes.spines[["top", "right"]].set_visible(False)
+
+    figure.tight_layout(pad=2)
     path.parent.mkdir(parents=True, exist_ok=True)
     figure.savefig(path, format="png", dpi=150)
     return path

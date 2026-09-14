@@ -20,6 +20,7 @@ from .visualization import (
     plot_color_results,
     plot_opening_results,
     plot_overall_results,
+    plot_rating_trend,
 )
 
 __all__ = [
@@ -41,4 +42,5 @@ __all__ = [
     "plot_color_results",
     "plot_opening_results",
     "plot_overall_results",
+    "plot_rating_trend",
 ]
