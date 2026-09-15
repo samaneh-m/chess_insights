@@ -7,6 +7,80 @@ from matplotlib.figure import Figure
 from matplotlib.ticker import MaxNLocator
 
 
+def plot_duration_results(
+    stats: dict[str, dict[str, int | float | None]], output_path: str | Path
+) -> Path:
+    path = Path(output_path)
+    if path.suffix.lower() != ".png":
+        raise ValueError("The output file must have a .png extension.")
+
+    groups = ("short", "medium", "long", "daily", "unknown")
+    labels = [
+        "Short\n< 5 min",
+        "Medium\n5 to < 15 min",
+        "Long\n>= 15 min",
+        "Daily\nSeparate",
+        "Unknown\nDuration or type",
+    ]
+    counts = []
+    rates = []
+    for name in groups:
+        group = stats.get(name, {})
+        count = group.get("total_games", 0)
+        rate = group.get("win_rate")
+        if isinstance(count, bool) or not isinstance(count, int) or count < 0:
+            raise ValueError("Game counts must be non-negative integers.")
+        if rate is not None and (
+            isinstance(rate, bool)
+            or not isinstance(rate, (int, float))
+            or not 0 <= rate <= 100
+        ):
+            raise ValueError("Win rates must be between 0 and 100, or None.")
+        counts.append(count)
+        rates.append(rate)
+
+    figure = Figure(figsize=(10, 7), facecolor="white")
+    FigureCanvasAgg(figure)
+    rate_axes, count_axes = figure.subplots(nrows=2, sharex=True)
+    colors = ["#27836B"] * 3 + ["#876AA6", "#777777"]
+    for position, rate in enumerate(rates):
+        if rate is None:
+            rate_axes.text(position, 3, "N/A", ha="center", color="#555555")
+        else:
+            rate_axes.bar(position, rate, width=0.55, color=colors[position])
+            rate_axes.text(position, rate + 3, f"{rate:.1f}%", ha="center")
+    rate_axes.set_title("Performance by game duration", fontsize=18, pad=18)
+    rate_axes.set_ylabel("Win rate (%)")
+    rate_axes.set_ylim(0, 115)
+    rate_axes.set_yticks(range(0, 101, 20))
+
+    bars = count_axes.bar(range(5), counts, width=0.55, color=colors)
+    count_axes.bar_label(bars, padding=3)
+    count_axes.set_ylabel("Number of games")
+    count_axes.set_ylim(0, max(1, max(counts) * 1.2))
+    count_axes.yaxis.set_major_locator(MaxNLocator(integer=True))
+    count_axes.set_xticks(range(5), labels)
+    count_axes.set_xlabel("Elapsed game duration (live games); Daily shown separately")
+    for axes in (rate_axes, count_axes):
+        axes.set_axisbelow(True)
+        axes.grid(axis="y", alpha=0.2)
+        axes.axvline(2.5, color="#AAAAAA", linestyle="--", linewidth=1)
+        axes.spines[["top", "right"]].set_visible(False)
+    figure.text(
+        0.5,
+        0.025,
+        "Counts include all results; win rates use known results only. "
+        "N/A = no known results.",
+        ha="center",
+        fontsize=9,
+        color="#555555",
+    )
+    figure.tight_layout(rect=(0, 0.06, 1, 1))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    figure.savefig(path, format="png", dpi=150)
+    return path
+
+
 def plot_hourly_results(
     stats: dict[int, dict[str, int | float | None]], output_path: str | Path
 ) -> Path:
