@@ -16,6 +16,7 @@ from .parsing import (
     parse_game,
 )
 from .processing import get_processed_games
+from .reporting import generate_performance_report
 from .visualization import (
     plot_color_results,
     plot_duration_results,
@@ -38,6 +39,7 @@ __all__ = [
     "extract_opening",
     "extract_rating",
     "extract_result",
+    "generate_performance_report",
     "get_player_games",
     "get_processed_games",
     "parse_game",
