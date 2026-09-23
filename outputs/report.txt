@@ -1,0 +1,58 @@
+Chess.com player: mbehzad
+
+Performance summary
+
+Overall: games: 1116; wins: 550; losses: 542; draws: 24; unknown results: 0; win rate: 49.3%.
+
+Piece color
+White: games: 556; wins: 274; losses: 268; draws: 14; unknown results: 0; win rate: 49.3%.
+Black: games: 560; wins: 276; losses: 274; draws: 10; unknown results: 0; win rate: 49.3%.
+
+Openings (up to five most played ECO groups)
+A00: games: 213; wins: 108; losses: 99; draws: 6; unknown results: 0; win rate: 50.7%.
+C00: games: 194; wins: 98; losses: 92; draws: 4; unknown results: 0; win rate: 50.5%.
+C20: games: 186; wins: 93; losses: 90; draws: 3; unknown results: 0; win rate: 50.0%.
+C41: games: 86; wins: 43; losses: 42; draws: 1; unknown results: 0; win rate: 50.0%.
+A01: games: 67; wins: 31; losses: 36; draws: 0; unknown results: 0; win rate: 46.3%.
+Other opening groups not listed: 59.
+
+Rating over time (rated games only, UTC)
+Blitz: 640 on 2025-08-05 to 471 on 2025-08-08; net change -169 across 43 rating records.
+Daily: 674 on 2023-06-26 to 674 on 2025-08-08; net change +0 across 2 rating records.
+Rapid: 944 on 2021-06-17 to 911 on 2026-09-12; net change -33 across 1071 rating records.
+
+Performance by start hour (UTC)
+00:00-00:59 UTC: games: 3; wins: 2; losses: 1; draws: 0; unknown results: 0; win rate: 66.7%.
+01:00-01:59 UTC: games: 1; wins: 1; losses: 0; draws: 0; unknown results: 0; win rate: 100.0%.
+03:00-03:59 UTC: games: 6; wins: 2; losses: 4; draws: 0; unknown results: 0; win rate: 33.3%.
+04:00-04:59 UTC: games: 1; wins: 1; losses: 0; draws: 0; unknown results: 0; win rate: 100.0%.
+05:00-05:59 UTC: games: 21; wins: 12; losses: 9; draws: 0; unknown results: 0; win rate: 57.1%.
+06:00-06:59 UTC: games: 30; wins: 17; losses: 12; draws: 1; unknown results: 0; win rate: 56.7%.
+07:00-07:59 UTC: games: 34; wins: 18; losses: 16; draws: 0; unknown results: 0; win rate: 52.9%.
+08:00-08:59 UTC: games: 58; wins: 26; losses: 31; draws: 1; unknown results: 0; win rate: 44.8%.
+09:00-09:59 UTC: games: 51; wins: 28; losses: 23; draws: 0; unknown results: 0; win rate: 54.9%.
+10:00-10:59 UTC: games: 71; wins: 35; losses: 36; draws: 0; unknown results: 0; win rate: 49.3%.
+11:00-11:59 UTC: games: 86; wins: 37; losses: 47; draws: 2; unknown results: 0; win rate: 43.0%.
+12:00-12:59 UTC: games: 110; wins: 64; losses: 44; draws: 2; unknown results: 0; win rate: 58.2%.
+13:00-13:59 UTC: games: 115; wins: 57; losses: 56; draws: 2; unknown results: 0; win rate: 49.6%.
+14:00-14:59 UTC: games: 113; wins: 56; losses: 51; draws: 6; unknown results: 0; win rate: 49.6%.
+15:00-15:59 UTC: games: 99; wins: 49; losses: 48; draws: 2; unknown results: 0; win rate: 49.5%.
+16:00-16:59 UTC: games: 89; wins: 45; losses: 41; draws: 3; unknown results: 0; win rate: 50.6%.
+17:00-17:59 UTC: games: 72; wins: 33; losses: 37; draws: 2; unknown results: 0; win rate: 45.8%.
+18:00-18:59 UTC: games: 53; wins: 23; losses: 30; draws: 0; unknown results: 0; win rate: 43.4%.
+19:00-19:59 UTC: games: 38; wins: 13; losses: 24; draws: 1; unknown results: 0; win rate: 34.2%.
+20:00-20:59 UTC: games: 33; wins: 19; losses: 13; draws: 1; unknown results: 0; win rate: 57.6%.
+21:00-21:59 UTC: games: 25; wins: 10; losses: 15; draws: 0; unknown results: 0; win rate: 40.0%.
+22:00-22:59 UTC: games: 6; wins: 2; losses: 3; draws: 1; unknown results: 0; win rate: 33.3%.
+23:00-23:59 UTC: games: 1; wins: 0; losses: 1; draws: 0; unknown results: 0; win rate: 0.0%.
+Games without a valid start time: 0.
+
+Performance by elapsed duration
+Short live games (under 5 minutes): games: 192; wins: 127; losses: 64; draws: 1; unknown results: 0; win rate: 66.1%.
+Medium live games (5 to under 15 minutes): games: 643; wins: 321; losses: 308; draws: 14; unknown results: 0; win rate: 49.9%.
+Long live games (15 minutes or more): games: 279; wins: 102; losses: 168; draws: 9; unknown results: 0; win rate: 36.6%.
+Daily games (separate from live games): games: 2; wins: 0; losses: 2; draws: 0; unknown results: 0; win rate: 0.0%.
+Unknown duration or game type: games: 0; wins: 0; losses: 0; draws: 0; unknown results: 0; win rate: N/A.
+
+Win rates include draws in the denominator and exclude unknown results. N/A means no known results.
+Compare percentages alongside game counts; small groups are less reliable. These statistics describe results, not the causes of wins or losses.
